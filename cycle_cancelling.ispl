@@ -1,0 +1,57 @@
+Agent Submarine
+    Vars: 
+    surface: boolean;
+    sunk: boolean;
+    open: boolean;
+    end Vars
+    -- Actions = {open, close, up, down};
+    
+    -- maybe it is ok to define composite actions for (s1 -> s2 -> s4) and (s1 -> s3 -> s4)
+    Actions = {open, close, up, down, open_down, down_open};
+
+    Protocol:
+        surface = true and sunk = false and open = false: {open, close, up, down, open_down, down_open}; -- s1 enables all actions
+        surface = true and sunk = false and open = true: {open, close, up, down}; -- s2 enables all actions
+        surface = false and sunk = false and open = false: {open, close, up, down}; -- s3 enables all actions
+        surface = false and sunk = true and open = true: {down}; -- s4 enables only down action
+    end Protocol
+    Evolution:
+        --surface = false and sunk = false and open = false if surface = true and sunk = false and open = false and Action = down; -- s1->s3
+        --surface = true and sunk = false and open = true if surface = true and sunk = false and open = false and Action = open; -- s1->s2
+        surface = true and sunk = false and open = false if surface = true and sunk = false and open = false and Action = up; -- s1->s1
+        surface = true and sunk = false and open = false if surface = true and sunk = false and open = false and Action = close; -- s1->s1
+        surface = true and sunk = false and open = false if surface = true and sunk = false and open = true and Action = close; -- s2->s1
+        surface = false and sunk = true and open = true if surface = true and sunk = false and open = true and Action = down; -- s2->s4
+        surface = true and sunk = false and open = true if surface = true and sunk = false and open = true and Action = open; -- s2->s2
+        surface = true and sunk = false and open = true if surface = true and sunk = false and open = true and Action = up; -- s2->s2
+        surface = true and sunk = false and open = false if surface = false and sunk = false and open = false and Action = up; -- s3->s1
+        surface = false and sunk = true and open = true if surface = false and sunk = false and open = false and Action = open; -- s3->s4
+        surface = false and sunk = false and open = false if surface = false and sunk = false and open = false and Action = down; -- s3->s3
+        surface = false and sunk = false and open = false if surface = false and sunk = false and open = false and Action = close; -- s3->s3
+        surface = false and sunk = true and open = true if surface = false and sunk = true and open = true and Action = down; -- s4->s4
+
+        --surface = false and sunk = true and open = true if surface = true and sunk = false and open = false and Action = open_down;
+        --surface = false and sunk = true and open = true if surface = true and sunk = false and open = false and Action = down_open;
+
+    end Evolution
+end Agent
+
+
+Evaluation
+        surface if Submarine.surface = true;
+        sunk if Submarine.sunk = true;
+        open if Submarine.open = true;
+end Evaluation
+
+InitStates
+        Submarine.surface = true and Submarine.sunk = false and Submarine.open = false;
+end InitStates
+
+Formulae
+        -- true formulae:
+        AF (surface and !sunk and !open); -- On all paths there is a future state where surface is true and open and sunk are false
+        --AG (surface -> EF !surface); -- On all paths in all states, if surface is true then it is possible to make it false in the future
+        --AG (!open -> EF open); -- On all paths in all states, if open is false then it is possible to make it true in the future
+        --EF (EG !surface and !sunk); -- There is a path where from some future state, there is a path where in every state the submarine is not on the surface but is also not sunk.
+end Formulae
+

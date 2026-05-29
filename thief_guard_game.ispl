@@ -1,0 +1,107 @@
+Semantics=SingleAssignment;
+
+Agent Environment
+	Vars:
+		stolen: boolean;
+	end Vars
+	Actions = {};
+	Protocol:
+	end Protocol
+	Evolution:
+		stolen = true if Thief.Action = steal;
+		--detected = true if stolen = true and (Thief.room1 = true and (Guard.room10 = true or Guard.room12 = true) or (Thief.room0 = true and Guard.room0 = true) or (Thief.room2 = true and Guard.room2 = true));
+	end Evolution
+end Agent
+
+
+-- Thief
+Agent Thief
+	Lobsvars = {stolen};
+	Vars:
+		room0: boolean;
+		room1: boolean;
+		room2: boolean;
+		home: boolean;
+	end Vars
+
+	Actions = {l, r, wait, steal, exit};
+
+	Protocol:
+		room0 = true: {r, wait};
+		room1 = true: {l, r, wait};
+		room2 = true and Environment.stolen = false: {l, exit, steal, wait};
+		room2 = true and Environment.stolen = true: {l, exit, wait};
+		home = true: {wait};
+	end Protocol
+
+	Evolution:
+		room0 = true if (room0 = true and Action = wait) or (room1 = true and Action = l);
+		room0 = false if room0 = true and Action = r;
+
+		room1 = true if (room1 = true and Action = wait) or (room0 = true and Action = r) or (room2 = true and Action = l);
+		room1 = false if room1 = true and (Action = l or Action = r);
+
+		room2 = true if (room2 = true and Action = wait) or (room2 = true and Action = steal) or (room1 = true and Action = r);
+		room2 = false if room2 = true and (Action = l or Action = exit);
+
+		home = true if room2 = true and Action = exit;
+	end Evolution
+end Agent
+
+
+-- Guard
+Agent Guard
+	Lobsvars = {stolen};
+	Vars:
+		room0: boolean;
+		room10: boolean;
+		room12: boolean;
+		room2: boolean;
+	end Vars
+
+	Actions = {l, r};
+
+	Protocol:
+		room0 = true: {r};
+		room10 = true: {r};
+		room12 = true: {l};
+		room2 = true: {l};
+	end Protocol
+
+	Evolution:
+		room10 = true if room0 = true and Action = r;
+		room10 = false if room10 = true and Action = r;
+
+		room2 = true if room10 = true and Action = r;
+		room2 = false if room2 = true and Action = l;
+
+		room12 = true if room2 = true and Action = l;
+		room12 = false if room12 = true and Action = r;
+
+		room0 = true if room12 = true and Action = l;
+		room0 = false if room0 = true and Action = r;
+	end Evolution
+end Agent
+
+Evaluation
+	stolen if Environment.stolen = true;
+	--detected if Environment.detected = true;
+	detected if Environment.stolen = true and (Thief.room1 = true and (Guard.room10 = true or Guard.room12 = true) or (Thief.room0 = true and Guard.room0 = true) or (Thief.room2 = true and Guard.room2 = true));
+	escaped if Thief.home = true and Environment.stolen = true;
+end Evaluation
+
+InitStates
+	Environment.stolen = false and Thief.room0 = true and Guard.room0 = true and Thief.room1 = false and Thief.room2 = false and Guard.room10 = false and Guard.room12 = false and Guard.room2 = false;
+end InitStates
+
+Groups
+    gT = {Thief};
+    gG = {Guard};
+    gTG = {Thief, Guard};
+end Groups
+
+Formulae
+	<gT>((!stolen and !escaped) U (stolen and !detected and escaped));
+	<gT>F (stolen and escaped);
+	<gT>G !detected;
+end Formulae

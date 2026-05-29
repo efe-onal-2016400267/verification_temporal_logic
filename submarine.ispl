@@ -1,0 +1,51 @@
+Semantics=SingleAssignment;
+
+Agent Submarine
+	Vars:
+		surface: boolean;
+		open: boolean;
+		sunk: boolean;
+	end Vars
+	Actions = {up, down, open, close};
+	Protocol:
+		sunk = false : {up, down, open, close};
+                sunk = true  : {down};
+	end Protocol
+	Evolution:
+                surface = true if surface = false and Action = up;
+		surface = true if surface = true and (Action = up or Action = open or Action = close);
+                surface = false if surface = true and Action = down;
+                surface = false if surface = false and (Action = down or Action = open or Action = close);
+
+                open = true if open = false and Action = open;
+                open = true if open = true and (Action = up or Action = open or Action = down);
+                open = false if open = true and Action = close;
+                open = false if open = false and (Action = up or Action = close or Action = down);
+
+                sunk = true if open = true and Action = down;
+                sunk = true if surface = false and Action = open;
+                sunk = false if sunk = false and (Action = up or Action = close);
+                sunk = false if sunk = false and open = false and Action = down;                		sunk = false if sunk = false and surface = true and Action = open;                 
+	end Evolution
+end Agent
+
+Evaluation
+	surface if Submarine.surface = true;
+	open if Submarine.open = true;
+	sunk if Submarine.sunk = true;
+end Evaluation
+
+InitStates
+        Submarine.surface = true and Submarine.open = false and Submarine.sunk = false;
+end InitStates
+
+Formulae
+	AF(surface and !open and !sunk);
+	AG(surface -> EF !surface);
+	AG(!open -> EF open);
+	EF EG (!surface and !sunk);
+        AG !open;
+        AF sunk;
+        EF (sunk and EF !sunk);
+        AX AX !sunk;
+end Formulae
